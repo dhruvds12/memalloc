@@ -4,6 +4,13 @@
 #include <pthread.h>  // for pthread_mutex_t
 #include <cstddef>    // for size_t
 
+#ifdef DEBUG
+#include <cstdio>
+#define DEBUG_PRINT(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__)
+#else
+#define DEBUG_PRINT(fmt, ...) 
+#endif
+
 typedef char ALIGN[16];
 
 // Unions is a data structure where all members share the same memory location.
@@ -42,6 +49,7 @@ extern "C" {
 
     // Allocates size bytes of memory and returns a pointer to the allocated memory.
     void* malloc(size_t size){
+        DEBUG_PRINT("malloc: requesting %zu bytes\n", size);
         // if the requested size is 0, return NULL
         if (!size){
             return nullptr;
@@ -103,6 +111,7 @@ extern "C" {
     // First check if the block is at the end of the heap and can be released
     // If not, mark the block as free
     void free(void *block){
+        DEBUG_PRINT("free: freeing block %p\n", block);
         if (!block){
             return;
         }
@@ -149,6 +158,7 @@ extern "C" {
 
     // Allocates memory for an array of num elements of nsize bytes each and returns a pointer to the allocated memory
     void* calloc(size_t num, size_t nsize){
+        DEBUG_PRINT("calloc: requesting %zu bytes\n", num * nsize);
         if (!num || !nsize){
             return nullptr;
         }
@@ -173,6 +183,7 @@ extern "C" {
 
     // Change the size of the given memory block to the size given
     void* realloc(void *block, size_t size){
+        DEBUG_PRINT("realloc: requesting %zu bytes\n", size);
         if (!block || !size){
             // if block is null, call malloc
             // if size is 0, malloc will handle it
