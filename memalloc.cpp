@@ -98,4 +98,52 @@ extern "C" {
         // Return the memory block to the user (shift header_ptr by one to hide the header)
         return reinterpret_cast<void*>(header_ptr + 1);
     }
+
+    // Frees memory block
+    // First check if the block is at the end of the heap and can be released
+    // If not, mark the block as free
+    void free(void *block){
+        if (!block){
+            return;
+        }
+
+        // lock the mutex
+        pthread_mutex_lock(&global_malloc_lock);
+
+        // Get the pointer to the header of the block
+        header_t* header_ptr = reinterpret_cast<header_t*>(block) - 1;
+
+        void *programbreak = sbrk(0); // Current value of program break
+
+        // if the block is at the end of the heap, release it
+        if ((char*)block + header_ptr->s.size == programbreak){
+            if (head == tail){
+                head = tail = nullptr;
+            } else {
+                header_t *temp = head;
+                while(temp){
+                    // If next block is the tail, set the next block to null and set the tail to the current block
+                    if (temp->s.next == tail){
+                        temp->s.next = nullptr;
+                        tail = temp;
+                        break;
+                    }
+                    // Move to the next block
+                    temp = temp->s.next;
+                }
+            }
+            // Decrease the program break by the size of the block
+            sbrk(0 - sizeof(header_t) - header_ptr->s.size);
+            // Unlock the mutex
+            pthread_mutex_unlock(&global_malloc_lock);
+            return;
+        }
+
+        // The block is not at the end of the heap
+        // Mark the block as free
+        header_ptr->s.is_free = 1;
+        
+        // unlock the mutex
+        pthread_mutex_unlock(&global_malloc_lock);
+    }
 }
