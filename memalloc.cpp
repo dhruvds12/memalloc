@@ -170,4 +170,31 @@ extern "C" {
         return block;
 
     }
+
+    // Change the size of the given memory block to the size given
+    void* realloc(void *block, size_t size){
+        if (!block || !size){
+            // if block is null, call malloc
+            // if size is 0, malloc will handle it
+            return malloc(size);
+        }
+        
+        // Get the header of the block
+        header_t *header_ptr = reinterpret_cast<header_t*>(block) - 1;
+
+        // If the size of the block is greater than the requested size, return the block
+        if (header_ptr->s.size >= size){
+            return block;
+        }
+
+        // Allocate a new block of correct size
+        void *new_block = malloc(size);
+        if (new_block){
+            // copy the contents of the old block to the new block
+            memcpy(new_block, block, header_ptr->s.size);
+            // free the old block
+            free(block);
+        }
+        return new_block;
+    }
 }
