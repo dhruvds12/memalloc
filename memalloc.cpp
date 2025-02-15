@@ -44,7 +44,7 @@ extern "C" {
     void* malloc(size_t size){
         // if the requested size is 0, return NULL
         if (!size){
-            return NULL;
+            return nullptr;
         }
 
         // Lock the mutex
@@ -142,8 +142,32 @@ extern "C" {
         // The block is not at the end of the heap
         // Mark the block as free
         header_ptr->s.is_free = 1;
-        
+
         // unlock the mutex
         pthread_mutex_unlock(&global_malloc_lock);
+    }
+
+    // Allocates memory for an array of num elements of nsize bytes each and returns a pointer to the allocated memory
+    void* calloc(size_t num, size_t nsize){
+        if (!num || !nsize){
+            return nullptr;
+        }
+
+        size_t size = num * nsize;
+
+        // Check for overflow
+        if (nsize != size / num){
+            return NULL;
+        }
+
+        void *block = malloc(size);
+        if (!block){
+            return nullptr;
+        }
+
+        // set the memory block to zero
+        memset(block, 0, size);
+        return block;
+
     }
 }
